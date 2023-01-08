@@ -1,3 +1,5 @@
+import { User } from "../types/user";
+
 const { Client } = require("pg");
 const client = new Client({
   user: "postgres",
@@ -9,11 +11,11 @@ const client = new Client({
 
 client.connect();
 
-const getTable = async (tableName) => {
+export const getTable = async (tableName:string): Promise<Array<User>> => {
     return await client.query(`select * from "${tableName}"`);
 };
 
-const addValuesToTable = async (tableName, values) => {
+export const addValuesToTable = async <Type extends object>(tableName:string, values: Array<Type>) => {
     let listProps = Object.keys(values[0]);
     console.log('List', listProps);
     let query = `INSERT INTO "${tableName}" (${listProps.join(",")}) VALUES `;
@@ -29,5 +31,3 @@ const addValuesToTable = async (tableName, values) => {
       console.log(ex);
     }
 };
-
-module.exports = {getTable, addValuesToTable};
