@@ -21,7 +21,7 @@ const refreshTokenValidation = (body: {
     refreshToken: string
 }) => {
     const schema = Joi.object({
-        refreshToken: Joi.string().required().label("Refresh token");
+        refreshToken: Joi.string().required().label("Refresh token"),
     })
     return schema.validate(body);
 }

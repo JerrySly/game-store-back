@@ -13,7 +13,7 @@ client.connect();
 
 export const getTable = async <Type extends object>(
   tableName: string
-): Promise<Array<Type>> => {
+): Promise<TableResult<Type>> => {
   return await client.query(`select * from "${tableName}"`);
 };
 

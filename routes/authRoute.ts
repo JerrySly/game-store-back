@@ -4,10 +4,12 @@ import { User } from '../types/user';
 import { logInValidation, singUpValidation } from '../utils/validationSchema';
 import { generateToken } from '../helper/token';
 export default (app: Express) => {
-  app.post('/singIn', async (req, res) => {
+  app.post('/singUp', async (req, res) => {
     try {
       const user: User = req.body;
+      console.log('req', user);
       const { error } = singUpValidation(user);
+      console.log(error);
       if (error) {
         return res.status(400).json({
           error: true,

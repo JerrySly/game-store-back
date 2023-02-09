@@ -24,7 +24,7 @@ export const generateToken = async (user: User) => {
   if (!user.id) {
     throw new Error('User not created');
   }
-  const userToken = tokensTable.find((x) => x.userId === user.id);
+  const userToken = tokensTable.rows.find((x) => x.userId === user.id);
   if (userToken) {
     await deleteValue('Tokens', user.id, 'userId');
   }
@@ -46,7 +46,7 @@ export const verifyToken = (refreshToken: string) => {
   return new Promise(( resolve, reject ) => {
     getTable<UserToken>('Tokens').then((data) => {
       const tokenTable = data;
-      const token = tokenTable.find((x) => x.token === refreshToken);
+      const token = tokenTable.rows.find((x) => x.token === refreshToken);
       if (!token) {
         return reject('Invalid token');
       }

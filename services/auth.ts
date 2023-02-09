@@ -4,7 +4,7 @@ import { User } from '../types/user';
 
 export const logIn = async (user: User): Promise<ResponseWrap<User>> => {
   const table = await getTable<User>('Users');
-  const tableUser = table.find((x) => x.email === user.email);
+  const tableUser = table.rows.find((x) => x.email === user.email);
   if (!tableUser) {
     return {
       error: true,
@@ -32,7 +32,8 @@ export const logIn = async (user: User): Promise<ResponseWrap<User>> => {
 
 export const singUp = async (user: User): Promise<ResponseWrap<User>> => {
   let table = await getTable<User>('Users');
-  const tableUser = table.find((x) => x.email === user.email);
+  console.log(table);
+  const tableUser = table.rows.find((x) => x.email === user.email);
   if (tableUser) {
     return {
       error: true,
@@ -42,13 +43,14 @@ export const singUp = async (user: User): Promise<ResponseWrap<User>> => {
   }
   const hashed = await hashingPassword(user.password);
   await addValuesToTable<User>('Users', [
+    //TODO посмотри что такое TypeORM и возможно его лучше тут использовать
     {
-      email: user.email,
-      password: hashed,
+      email: `'${user.email}'`,
+      password: `'${hashed}'`,
     },
   ]);
   table = await getTable<User>('Users');
-  const newTableUser = table.find((x) => x.email === user.email);
+  const newTableUser = table.rows.find((x) => x.email === user.email);
   if (!newTableUser) {
     return {
       error: true,

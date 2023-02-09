@@ -9,36 +9,66 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.singUp = exports.singIn = void 0;
+exports.singUp = exports.logIn = void 0;
 const database_1 = require("../database");
 const hashing_1 = require("../helper/hashing");
-const singIn = (login, password) => __awaiter(void 0, void 0, void 0, function* () {
-    const table = yield (0, database_1.getTable)("Users");
-    const user = table.find((x) => x.login === login);
-    if (!user) {
-        throw new Error("User is not exist");
+const logIn = (user) => __awaiter(void 0, void 0, void 0, function* () {
+    const table = yield (0, database_1.getTable)('Users');
+    const tableUser = table.rows.find((x) => x.email === user.email);
+    if (!tableUser) {
+        return {
+            error: true,
+            message: 'User is not exist',
+            data: null,
+        };
     }
-    const isPasswordEqual = yield (0, hashing_1.comparePassword)(password, user.password);
+    const isPasswordEqual = yield (0, hashing_1.comparePassword)(user.password, tableUser.password);
     if (isPasswordEqual) {
-        return user;
+        return {
+            error: false,
+            message: 'Valid data',
+            data: tableUser,
+        };
     }
-    throw new Error("Password incorrect");
+    return {
+        data: null,
+        error: true,
+        message: 'Password is invalid',
+    };
 });
-exports.singIn = singIn;
+exports.logIn = logIn;
 const singUp = (user) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        user.password = yield (0, hashing_1.hashingPassword)(user.password);
-        const userArray = [user];
-        yield (0, database_1.addValuesToTable)("Users", userArray);
-        return true;
+    let table = yield (0, database_1.getTable)('Users');
+    console.log(table);
+    const tableUser = table.rows.find((x) => x.email === user.email);
+    if (tableUser) {
+        return {
+            error: true,
+            data: null,
+            message: 'User is exist',
+        };
     }
-    catch (error) {
-        if (error instanceof Error) {
-            console.log("Error on singUp \n" + error.message);
-        }
-        else
-            console.log("Error on singUp " + error);
-        return false;
+    const hashed = yield (0, hashing_1.hashingPassword)(user.password);
+    yield (0, database_1.addValuesToTable)('Users', [
+        //TODO посмотри что такое TypeORM и возможно его лучше тут использовать
+        {
+            email: `'${user.email}'`,
+            password: `'${hashed}'`,
+        },
+    ]);
+    table = yield (0, database_1.getTable)('Users');
+    const newTableUser = table.rows.find((x) => x.email === user.email);
+    if (!newTableUser) {
+        return {
+            error: true,
+            message: 'Error on create user',
+            data: null,
+        };
     }
+    return {
+        error: false,
+        message: 'Ok',
+        data: newTableUser,
+    };
 });
 exports.singUp = singUp;

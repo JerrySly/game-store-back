@@ -9,13 +9,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.addValuesToTable = exports.getTable = void 0;
-const { Client } = require("pg");
+exports.deleteValue = exports.addValuesToTable = exports.getTable = void 0;
+const { Client } = require('pg');
 const client = new Client({
-    user: "postgres",
-    database: "Gamestore",
-    password: "postgres",
-    hostname: "port",
+    user: 'postgres',
+    database: 'Gamestore',
+    password: 'postgres',
+    hostname: 'port',
     port: 5432,
 });
 client.connect();
@@ -26,9 +26,9 @@ exports.getTable = getTable;
 const addValuesToTable = (tableName, values) => __awaiter(void 0, void 0, void 0, function* () {
     let listProps = Object.keys(values[0]);
     console.log('List', listProps);
-    let query = `INSERT INTO "${tableName}" (${listProps.join(",")}) VALUES `;
+    let query = `INSERT INTO "${tableName}" (${listProps.join(',')}) VALUES `;
     for (let value of values) {
-        query += `(${Object.values(value).join(",")});`;
+        query += `(${Object.values(value).join(',')});`;
     }
     // query = query.substring(0, query.length-1)
     console.log(query);
@@ -40,3 +40,7 @@ const addValuesToTable = (tableName, values) => __awaiter(void 0, void 0, void 0
     }
 });
 exports.addValuesToTable = addValuesToTable;
+const deleteValue = (tableName, primaryKey, primaryKeyName) => __awaiter(void 0, void 0, void 0, function* () {
+    yield client.query(`Delete * from ${tableName} Where ${primaryKeyName} = ${primaryKey}`);
+});
+exports.deleteValue = deleteValue;

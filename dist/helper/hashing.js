@@ -19,7 +19,7 @@ dotenv_1.default.config();
 const hashingPassword = (password) => __awaiter(void 0, void 0, void 0, function* () {
     const rounds = process.env.SALT_ROUNDS;
     if (!rounds) {
-        throw new Error("Has not amount of salt rounds");
+        throw new Error("Hash not amount of salt rounds");
     }
     const salt = yield (0, bcrypt_1.genSalt)(Number.parseInt(rounds));
     return yield (0, bcrypt_1.hash)(password, salt);
