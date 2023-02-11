@@ -9,7 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteValue = exports.addValuesToTable = exports.getTable = void 0;
+exports.createDefaultTables = exports.useSQLScript = exports.deleteValue = exports.addValuesToTable = exports.getTable = void 0;
+const promises_1 = require("fs/promises");
 const { Client } = require('pg');
 const client = new Client({
     user: 'postgres',
@@ -44,3 +45,21 @@ const deleteValue = (tableName, primaryKey, primaryKeyName) => __awaiter(void 0,
     yield client.query(`Delete * from ${tableName} Where ${primaryKeyName} = ${primaryKey}`);
 });
 exports.deleteValue = deleteValue;
+const useSQLScript = (filePath) => __awaiter(void 0, void 0, void 0, function* () {
+    const createScript = yield (0, promises_1.open)(filePath);
+    try {
+        const content = yield createScript.readFile();
+        yield client.query(content.toString('ascii'));
+    }
+    catch (e) {
+        console.log(e);
+    }
+    finally {
+        createScript.close();
+    }
+});
+exports.useSQLScript = useSQLScript;
+const createDefaultTables = () => __awaiter(void 0, void 0, void 0, function* () {
+    yield (0, exports.useSQLScript)('./database/createTables.sql');
+});
+exports.createDefaultTables = createDefaultTables;

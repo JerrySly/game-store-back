@@ -1,5 +1,5 @@
 import { User } from '../types/user';
-
+import { open } from 'fs/promises';
 const { Client } = require('pg');
 const client = new Client({
   user: 'postgres',
@@ -45,4 +45,20 @@ export const deleteValue = async <PrimaryType>(
   await client.query(
     `Delete * from ${tableName} Where ${primaryKeyName} = ${primaryKey}`
   );
+};
+
+export const useSQLScript = async (filePath: string) => {
+  const createScript = await open(filePath);
+  try {
+    const content = await createScript.readFile();
+    await client.query(content.toString('ascii'));
+  } catch (e) {
+    console.log(e);
+  } finally {
+    createScript.close();
+  }
+};
+
+export const createDefaultTables = async () => {
+  await useSQLScript('./database/createTables.sql');
 };
