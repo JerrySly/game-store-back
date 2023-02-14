@@ -1,7 +1,8 @@
 import express, { Express, Request, Response } from 'express';
+import "reflect-metadata";
 import auth from './routes/authRoute';
 import cors from 'cors';
-import { createDefaultTables, createDefaultValues } from './database';
+import { createDefaultTables } from './database';
 
 createDefaultTables();
 

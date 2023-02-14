@@ -1,8 +1,8 @@
 import { Express } from 'express';
 import { singUp, logIn } from '../services/auth';
-import { User } from '../types/user';
 import { logInValidation, singUpValidation } from '../utils/validationSchema';
 import { generateToken } from '../helper/token';
+import { User } from '../database/entities/user';
 export default (app: Express) => {
   app.post('/singUp', async (req, res) => {
     try {

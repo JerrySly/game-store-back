@@ -13,8 +13,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.verifyToken = exports.generateToken = void 0;
-const database_1 = require("../database");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const database_1 = require("../database");
+const token_1 = require("../database/entities/token");
+const tokenRepo = database_1.dataSource.getRepository(token_1.Token);
 const generateToken = (user) => __awaiter(void 0, void 0, void 0, function* () {
     const payload = { id: user.id, email: user.email };
     const accessToken = jsonwebtoken_1.default.sign(payload, process.env.ACCESS_TOKEN_KEY, {
@@ -23,20 +25,21 @@ const generateToken = (user) => __awaiter(void 0, void 0, void 0, function* () {
     const refreshToken = jsonwebtoken_1.default.sign(payload, process.env.REFRESH_TOKEN_KEY, {
         expiresIn: '30d',
     });
-    const tokensTable = yield (0, database_1.getTable)('Tokens');
     if (!user.id) {
         throw new Error('User not created');
     }
-    const userToken = tokensTable.rows.find((x) => x.userId === user.id);
-    if (userToken) {
-        yield (0, database_1.deleteValue)('Tokens', user.id, 'userId');
-    }
-    yield (0, database_1.addValuesToTable)('Tokens', [
-        {
-            token: refreshToken,
+    const userToken = yield tokenRepo.findOne({
+        where: {
             userId: user.id,
         },
-    ]);
+    });
+    if (userToken) {
+        yield tokenRepo.remove(userToken);
+    }
+    tokenRepo.create({
+        token: refreshToken,
+        userId: user.id,
+    });
     return {
         accessToken,
         refreshToken,
@@ -45,9 +48,13 @@ const generateToken = (user) => __awaiter(void 0, void 0, void 0, function* () {
 exports.generateToken = generateToken;
 const verifyToken = (refreshToken) => {
     return new Promise((resolve, reject) => {
-        (0, database_1.getTable)('Tokens').then((data) => {
-            const tokenTable = data;
-            const token = tokenTable.rows.find((x) => x.token === refreshToken);
+        tokenRepo
+            .findOne({
+            where: {
+                token: refreshToken,
+            },
+        })
+            .then((token) => {
             if (!token) {
                 return reject('Invalid token');
             }

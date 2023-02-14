@@ -1,10 +1,13 @@
-import { getTable, addValuesToTable } from '../database';
+import { FindOperator, getRepository } from 'typeorm';
 import { hashingPassword, comparePassword } from '../helper/hashing';
-import { User } from '../types/user';
+import { User } from '../database/entities/user';
+import { dataSource } from '../database';
+
+const userRepo = dataSource.getRepository(User);
 
 export const logIn = async (user: User): Promise<ResponseWrap<User>> => {
-  const table = await getTable<User>('Users');
-  const tableUser = table.rows.find((x) => x.email === user.email);
+  const tableUser = await getUserByEmail(user.email);
+
   if (!tableUser) {
     return {
       error: true,
@@ -31,9 +34,7 @@ export const logIn = async (user: User): Promise<ResponseWrap<User>> => {
 };
 
 export const singUp = async (user: User): Promise<ResponseWrap<User>> => {
-  let table = await getTable<User>('Users');
-  console.log(table);
-  const tableUser = table.rows.find((x) => x.email === user.email);
+  const tableUser = await getUserByEmail(user.email);
   if (tableUser) {
     return {
       error: true,
@@ -42,15 +43,12 @@ export const singUp = async (user: User): Promise<ResponseWrap<User>> => {
     };
   }
   const hashed = await hashingPassword(user.password);
-  await addValuesToTable<User>('Users', [
-    //TODO посмотри что такое TypeORM и возможно его лучше тут использовать
-    {
-      email: `'${user.email}'`,
-      password: `'${hashed}'`,
-    },
-  ]);
-  table = await getTable<User>('Users');
-  const newTableUser = table.rows.find((x) => x.email === user.email);
+  const createdUser =  await userRepo.create({
+    email: user.email,
+    password: hashed,
+  });
+  userRepo.save(createdUser);
+  const newTableUser = await getUserByEmail(user.email);
   if (!newTableUser) {
     return {
       error: true,
@@ -63,4 +61,14 @@ export const singUp = async (user: User): Promise<ResponseWrap<User>> => {
     message: 'Ok',
     data: newTableUser,
   };
+};
+
+const getUserByEmail = async (
+  email: string | FindOperator<string> | undefined
+): Promise<User | null> => {
+    return await userRepo.findOne({
+      where: {
+        email,
+      },
+    });
 };

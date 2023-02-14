@@ -9,47 +9,32 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createDefaultTables = exports.useSQLScript = exports.deleteValue = exports.addValuesToTable = exports.getTable = void 0;
+exports.createDefaultTables = exports.dataSource = void 0;
+const typeorm_1 = require("typeorm");
 const promises_1 = require("fs/promises");
-const { Client } = require('pg');
-const client = new Client({
-    user: 'postgres',
-    database: 'Gamestore',
-    password: 'postgres',
-    hostname: 'port',
+const user_1 = require("./entities/user");
+const dataSource = new typeorm_1.DataSource({
+    type: 'postgres',
+    host: 'localhost',
     port: 5432,
+    username: 'postgres',
+    password: 'postgres',
+    database: 'GameStore',
+    entities: [user_1.User],
 });
-client.connect();
-const getTable = (tableName) => __awaiter(void 0, void 0, void 0, function* () {
-    return yield client.query(`select * from "${tableName}"`);
+exports.dataSource = dataSource;
+dataSource.initialize()
+    .then(() => {
+    console.log("Data Source has been initialized!");
+})
+    .catch((err) => {
+    console.error("Error during Data Source initialization", err);
 });
-exports.getTable = getTable;
-const addValuesToTable = (tableName, values) => __awaiter(void 0, void 0, void 0, function* () {
-    let listProps = Object.keys(values[0]);
-    console.log('List', listProps);
-    let query = `INSERT INTO "${tableName}" (${listProps.join(',')}) VALUES `;
-    for (let value of values) {
-        query += `(${Object.values(value).join(',')});`;
-    }
-    // query = query.substring(0, query.length-1)
-    console.log(query);
-    try {
-        yield client.query(query);
-    }
-    catch (ex) {
-        console.log(ex);
-    }
-});
-exports.addValuesToTable = addValuesToTable;
-const deleteValue = (tableName, primaryKey, primaryKeyName) => __awaiter(void 0, void 0, void 0, function* () {
-    yield client.query(`Delete * from ${tableName} Where ${primaryKeyName} = ${primaryKey}`);
-});
-exports.deleteValue = deleteValue;
 const useSQLScript = (filePath) => __awaiter(void 0, void 0, void 0, function* () {
     const createScript = yield (0, promises_1.open)(filePath);
     try {
         const content = yield createScript.readFile();
-        yield client.query(content.toString('ascii'));
+        yield dataSource.createQueryRunner().manager.query(content.toString('ascii'));
     }
     catch (e) {
         console.log(e);
@@ -58,8 +43,7 @@ const useSQLScript = (filePath) => __awaiter(void 0, void 0, void 0, function* (
         createScript.close();
     }
 });
-exports.useSQLScript = useSQLScript;
 const createDefaultTables = () => __awaiter(void 0, void 0, void 0, function* () {
-    yield (0, exports.useSQLScript)('./database/createTables.sql');
+    yield useSQLScript('./database/createTables.sql');
 });
 exports.createDefaultTables = createDefaultTables;

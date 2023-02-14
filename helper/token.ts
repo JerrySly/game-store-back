@@ -1,7 +1,9 @@
-import { Token } from 'typescript';
-import { addValuesToTable, deleteValue, getTable } from '../database';
-import { User } from '../types/user';
 import jwt from 'jsonwebtoken';
+import { User } from '../database/entities/user';
+import { dataSource } from '../database';
+import { Token } from '../database/entities/token';
+
+const tokenRepo = dataSource.getRepository(Token);
 export const generateToken = async (user: User) => {
   const payload = { id: user.id, email: user.email };
   const accessToken = jwt.sign(
@@ -20,22 +22,22 @@ export const generateToken = async (user: User) => {
     }
   );
 
-  const tokensTable = await getTable<UserToken>('Tokens');
   if (!user.id) {
     throw new Error('User not created');
   }
-  const userToken = tokensTable.rows.find((x) => x.userId === user.id);
-  if (userToken) {
-    await deleteValue('Tokens', user.id, 'userId');
-  }
-
-  await addValuesToTable<UserToken>('Tokens', [
-    {
-      token: refreshToken,
+  const userToken = await tokenRepo.findOne({
+    where: {
       userId: user.id,
     },
-  ]);
+  });
 
+  if (userToken) {
+    await tokenRepo.remove(userToken);
+  }
+  tokenRepo.create({
+    token: refreshToken,
+    userId: user.id,
+  });
   return {
     accessToken,
     refreshToken,
@@ -43,24 +45,28 @@ export const generateToken = async (user: User) => {
 };
 
 export const verifyToken = (refreshToken: string) => {
-  return new Promise(( resolve, reject ) => {
-    getTable<UserToken>('Tokens').then((data) => {
-      const tokenTable = data;
-      const token = tokenTable.rows.find((x) => x.token === refreshToken);
-      if (!token) {
-        return reject('Invalid token');
-      }
-      jwt.verify(
-        refreshToken,
-        process.env.REFRESH_TOKEN_KEY as string,
-        (err, tokenDetails) => {
-          if (err) return reject('Invalid token');
-          return resolve({
-            tokenDetails,
-            message: 'Valid token',
-          });
+  return new Promise((resolve, reject) => {
+    tokenRepo
+      .findOne({
+        where: {
+          token: refreshToken,
+        },
+      })
+      .then((token) => {
+        if (!token) {
+          return reject('Invalid token');
         }
-      );
-    });
+        jwt.verify(
+          refreshToken,
+          process.env.REFRESH_TOKEN_KEY as string,
+          (err, tokenDetails) => {
+            if (err) return reject('Invalid token');
+            return resolve({
+              tokenDetails,
+              message: 'Valid token',
+            });
+          }
+        );
+      });
   });
 };

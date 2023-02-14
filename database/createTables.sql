@@ -1,3 +1,5 @@
+CREATE DATABASE Gamestore
+
 CREATE TABLE Users (
     id bigserial primary key,
     email text not null,

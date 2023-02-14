@@ -1,5 +1,5 @@
 import Joi from "joi"
-import { User } from "../types/user"
+import { User } from "../database/entities/user";
 
 const singUpValidation = (user:User) => {
     const schema = Joi.object({

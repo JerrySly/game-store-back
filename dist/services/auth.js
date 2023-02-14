@@ -10,11 +10,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.singUp = exports.logIn = void 0;
-const database_1 = require("../database");
 const hashing_1 = require("../helper/hashing");
+const user_1 = require("../database/entities/user");
+const database_1 = require("../database");
+const userRepo = database_1.dataSource.getRepository(user_1.User);
 const logIn = (user) => __awaiter(void 0, void 0, void 0, function* () {
-    const table = yield (0, database_1.getTable)('Users');
-    const tableUser = table.rows.find((x) => x.email === user.email);
+    const tableUser = yield getUserByEmail(user.email);
     if (!tableUser) {
         return {
             error: true,
@@ -38,9 +39,7 @@ const logIn = (user) => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.logIn = logIn;
 const singUp = (user) => __awaiter(void 0, void 0, void 0, function* () {
-    let table = yield (0, database_1.getTable)('Users');
-    console.log(table);
-    const tableUser = table.rows.find((x) => x.email === user.email);
+    const tableUser = yield getUserByEmail(user.email);
     if (tableUser) {
         return {
             error: true,
@@ -49,15 +48,12 @@ const singUp = (user) => __awaiter(void 0, void 0, void 0, function* () {
         };
     }
     const hashed = yield (0, hashing_1.hashingPassword)(user.password);
-    yield (0, database_1.addValuesToTable)('Users', [
-        //TODO посмотри что такое TypeORM и возможно его лучше тут использовать
-        {
-            email: `'${user.email}'`,
-            password: `'${hashed}'`,
-        },
-    ]);
-    table = yield (0, database_1.getTable)('Users');
-    const newTableUser = table.rows.find((x) => x.email === user.email);
+    const createdUser = yield userRepo.create({
+        email: user.email,
+        password: hashed,
+    });
+    userRepo.save(createdUser);
+    const newTableUser = yield getUserByEmail(user.email);
     if (!newTableUser) {
         return {
             error: true,
@@ -72,3 +68,10 @@ const singUp = (user) => __awaiter(void 0, void 0, void 0, function* () {
     };
 });
 exports.singUp = singUp;
+const getUserByEmail = (email) => __awaiter(void 0, void 0, void 0, function* () {
+    return yield userRepo.findOne({
+        where: {
+            email,
+        },
+    });
+});

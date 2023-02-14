@@ -1,57 +1,28 @@
-import { User } from '../types/user';
+import { DataSource } from 'typeorm';
 import { open } from 'fs/promises';
-const { Client } = require('pg');
-const client = new Client({
-  user: 'postgres',
-  database: 'Gamestore',
-  password: 'postgres',
-  hostname: 'port',
+import { User } from './entities/user';
+const dataSource = new DataSource({
+  type: 'postgres',
+  host: 'localhost',
   port: 5432,
+  username: 'postgres',
+  password: 'postgres',
+  database: 'GameStore',
+  entities: [ User],
 });
 
-client.connect();
-
-export const getTable = async <Type extends object>(
-  tableName: string
-): Promise<TableResult<Type>> => {
-  return await client.query(`select * from "${tableName}"`);
-};
-
-export const addValuesToTable = async <Type extends object>(
-  tableName: string,
-  values: Array<Type>
-) => {
-  let listProps = Object.keys(values[0]);
-  console.log('List', listProps);
-  let query = `INSERT INTO "${tableName}" (${listProps.join(',')}) VALUES `;
-  for (let value of values) {
-    query += `(${Object.values(value).join(',')});`;
-  }
-  // query = query.substring(0, query.length-1)
-  console.log(query);
-
-  try {
-    await client.query(query);
-  } catch (ex) {
-    console.log(ex);
-  }
-};
-
-export const deleteValue = async <PrimaryType>(
-  tableName: string,
-  primaryKey: PrimaryType,
-  primaryKeyName: string
-) => {
-  await client.query(
-    `Delete * from ${tableName} Where ${primaryKeyName} = ${primaryKey}`
-  );
-};
-
-export const useSQLScript = async (filePath: string) => {
+dataSource.initialize()
+    .then(() => {
+        console.log("Data Source has been initialized!")
+    })
+    .catch((err) => {
+        console.error("Error during Data Source initialization", err)
+    })
+const useSQLScript = async (filePath: string) => {
   const createScript = await open(filePath);
   try {
     const content = await createScript.readFile();
-    await client.query(content.toString('ascii'));
+    await dataSource.createQueryRunner().manager.query(content.toString('ascii'));
   } catch (e) {
     console.log(e);
   } finally {
@@ -59,6 +30,12 @@ export const useSQLScript = async (filePath: string) => {
   }
 };
 
-export const createDefaultTables = async () => {
+
+
+const createDefaultTables = async () => {
   await useSQLScript('./database/createTables.sql');
 };
+
+
+export { dataSource ,createDefaultTables };
+
